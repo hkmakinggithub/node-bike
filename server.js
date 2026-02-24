@@ -1,27 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // <-- Fixed: using bcryptjs
 require('dotenv').config();
 
 const app = express();
 
-// 1. ADVANCED CORS SETTINGS
-// This fixes the "Blocked by CORS" error for Netlify
-app.use(cors({
+// 1. ADVANCED CORS SETTINGS (The Bouncer)
+const corsOptions = {
   origin: [
     'https://bhucharinfocare.netlify.app',
-    /\.netlify\.app$/ // Allows all Netlify preview subdomains
+    /\.netlify\.app$/ 
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
 
 app.use(express.json());
-app.options('*', cors()); // Enable pre-flight for all routes
+app.use(cors(corsOptions)); // <-- Fixed: Order is correct, and no crashing '*' route
 
-// 2. DATABASE CONNECTION
+// 2. DATABASE CONNECTION (The Kitchen)
 const db = mysql.createPool({
   host: process.env.MYSQLHOST,
   user: process.env.MYSQLUSER,
@@ -42,7 +41,7 @@ db.getConnection((err, connection) => {
   }
 });
 
-// 3. THE LOGIN ROUTE WITH DEBUG LOGS
+// 3. THE LOGIN ROUTE (The Waiter)
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
   
@@ -82,7 +81,7 @@ app.post('/api/login', (req, res) => {
 
     } catch (bcryptErr) {
       console.error("❌ Bcrypt Error:", bcryptErr);
-      return res.status(500).json({ message: "Internal server error during password check" });
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
 });
@@ -92,7 +91,7 @@ app.get('/', (req, res) => {
   res.send('Bike App Server is Running!');
 });
 
-// 5. START SERVER
+// 5. START SERVER (Opening the doors)
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server Running on Port ${PORT}`);
