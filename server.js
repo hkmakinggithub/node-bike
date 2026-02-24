@@ -19,7 +19,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.options('*', cors()); // Enable pre-flight for all routes
+app.options('(.*)', cors());
 
 // 2. DATABASE CONNECTION
 const db = mysql.createPool({
