@@ -39,24 +39,7 @@ exports.login = async (req, res) => {
         parsedPermissions = [];
       }
     }
-// Inside your login route:
-const { email, password } = req.body;
-console.log("🔍 Login Attempt for:", email); 
 
-db.query("SELECT * FROM users WHERE email = ?", [email], async (err, results) => {
-    if (results.length === 0) {
-        console.log("❌ Error: User not found in database");
-        return res.status(401).send("Invalid email");
-    }
-
-    const user = results[0];
-    console.log("✅ User found:", user.username);
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log("🔐 Password Match:", isMatch);
-
-    if (!isMatch) return res.status(401).send("Invalid password");
-});
     const token = jwt.sign(
       { id: user.id, role: user.role, branchId: user.branch_id }, 
       process.env.JWT_SECRET || 'bahuchar_secret_2026', 
