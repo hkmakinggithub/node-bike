@@ -21,7 +21,7 @@ exports.login = async (req, res) => {
     if (user.role === 'STAFF') {
       const loginTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
       sendEmail(
-        'admin@bahuchar.com', 
+        'harshsompura24@gmail.com', 
         'SECURITY ALERT: Staff Login', 
         `Staff (${user.email}) logged in at ${loginTime}.`
       );
