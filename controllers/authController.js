@@ -1,10 +1,10 @@
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // ✅ FIXED: Removed the dot
 const db = require('../config/db');
 require('dotenv').config();
 
 // ✅ FIXED: Removed the extra ".js" from the folder name
-const { sendEmail } = require('../utils.js/mailer'); 
+const { sendEmail } = require('../utils/mailer'); 
 
 exports.login = async (req, res) => {
   const { email, password } = req.body;
@@ -60,6 +60,7 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };  
+
 // ==========================================
 // FORGOT PASSWORD (GENERATE OTP)
 // ==========================================

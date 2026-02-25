@@ -1,7 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2');
-const bcrypt = require('bcryptjs'); // <-- Fixed: using bcryptjs
 require('dotenv').config();
 
 const app = express();
@@ -10,88 +8,36 @@ const app = express();
 const corsOptions = {
   origin: [
     'https://bhucharinfocare.netlify.app',
-    /\.netlify\.app$/ 
+    /\.netlify\.app$/, 
+    'http://localhost:5173' // 🚨 ADDED: Allows your local React app to connect!
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(cors(corsOptions)); // <-- Fixed: Order is correct, and no crashing '*' route
 
-// 2. DATABASE CONNECTION (The Kitchen)
-const db = mysql.createPool({
-  host: process.env.MYSQLHOST,
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: process.env.MYSQLDATABASE,
-  port: process.env.MYSQLPORT || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+// 2. DATABASE CONNECTION CHECK
+// We use the pool you already set up in config/db.js!
+const db = require('./config/db');
 
-db.getConnection((err, connection) => {
-  if (err) {
-    console.error("❌ Database Connection Failed:", err.message);
-  } else {
-    console.log("✅ Database Connected to Railway Successfully!");
-    connection.release();
-  }
-});
+db.execute('SELECT 1')
+  .then(() => console.log("✅ Database Connected Successfully!"))
+  .catch((err) => console.error("❌ Database Connection Failed:", err.message));
 
-// 3. THE LOGIN ROUTE (The Waiter)
-app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
-  
-  console.log("🔍 Login Attempt for Email:", email);
-
-  const sql = "SELECT * FROM users WHERE email = ?";
-  
-  db.query(sql, [email], async (err, results) => {
-    if (err) {
-      console.error("❌ SQL Error:", err);
-      return res.status(500).json({ message: "Database error" });
-    }
-
-    if (results.length === 0) {
-      console.log("❌ Error: User not found in database for:", email);
-      return res.status(401).json({ message: "Invalid email or user not found" });
-    }
-
-    const user = results[0];
-    console.log("✅ User found in DB:", user.username);
-
-    // Compare Password
-    try {
-      const isMatch = await bcrypt.compare(password, user.password);
-      console.log("🔐 Password Match Result:", isMatch);
-
-      if (!isMatch) {
-        return res.status(401).json({ message: "Invalid password" });
-      }
-
-      // Login Success
-      console.log("🚀 Login Successful for:", user.username);
-      res.status(200).json({
-        message: "Login successful",
-        user: { id: user.id, username: user.username, role: user.role }
-      });
-
-    } catch (bcryptErr) {
-      console.error("❌ Bcrypt Error:", bcryptErr);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-  });
-});
+// 3. CONNECT ALL YOUR ROUTES
+// This brings in ALL your sales, master, service, and login routes!
+const apiRoutes = require('./routes/apiRoutes');
+app.use('/api', apiRoutes); 
 
 // 4. TEST ROUTE
 app.get('/', (req, res) => {
-  res.send('Bike App Server is Running!');
+  res.send('Bike App Server is Running! API is connected.');
 });
 
-// 5. START SERVER (Opening the doors)
+// 5. START SERVER
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`🚀 Server Running on Port ${PORT}`);

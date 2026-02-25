@@ -3,15 +3,17 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user:  process.env.EMAIL_USER, // 👈 Put your garage's Gmail here
-    pass: 'ebbcyjdvkxewmmeg' // 👈 Not your normal password! Use a Google App Password
+    // Falls back to your email if the .env variable is missing
+    user: process.env.EMAIL_USER || 'harshsompura24@gmail.com', 
+    pass: process.env.EMAIL_PASS || 'ebbcyjdvkxewmmeg' 
   }
 });
 
 exports.sendEmail = async (to, subject, text) => {
   try {
     await transporter.sendMail({
-      from: '"Bahuchar Infocare" harshsompura24@gmail.com',
+      // ✅ FIXED: Added the < > around the email address
+      from: '"Bahuchar Infocare" <harshsompura24@gmail.com>', 
       to,
       subject,
       text

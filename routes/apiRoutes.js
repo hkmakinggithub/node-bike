@@ -9,92 +9,96 @@ const reportController = require('../controllers/reportController');
 const expenseController = require('../controllers/expenseController');
 const salesController = require('../controllers/salesController');
 const serviceController = require('../controllers/serviceController');
+const inquiryController = require('../controllers/inquiryController');
+
+// Middleware Guards
+const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 
 // ==============================
-// AUTH
+// 🟢 PUBLIC ROUTES (No Token Needed)
 // ==============================
 router.post('/login', auth.login);
+router.post('/forgot-password', auth.forgotPassword);
+router.post('/reset-password', auth.resetPassword);
 
 // ==============================
+// 🔴 ADMIN ONLY ROUTES
+// ==============================
+router.post('/create-staff', verifyToken, isAdmin, auth.createStaff);
+
+// ==============================
+// 🟡 PROTECTED ROUTES (Token Required)
+// ==============================
+
 // MASTER MODULE
-// ==============================
-router.get('/models', master.getModels);
-router.post('/add-model', master.addModel);
-router.get('/suppliers', master.getSuppliers);
-router.post('/add-supplier', master.addSupplier);
-router.get('/parts', master.getParts);
-router.post('/add-part', master.addPart);
-router.get('/customers-list', master.getCustomers);
-router.post('/add-customer', master.addCustomer);
-router.get('/service-menu', master.getServiceMenu);
-router.post('/add-service-item', master.addServiceItem);
+router.get('/models', verifyToken, master.getModels);
+router.post('/add-model', verifyToken, master.addModel);
+router.get('/suppliers', verifyToken, master.getSuppliers);
+router.post('/add-supplier', verifyToken, master.addSupplier);
+router.get('/parts', verifyToken, master.getParts);
+router.post('/add-part', verifyToken, master.addPart);
+router.get('/customers-list', verifyToken, master.getCustomers);
+router.post('/add-customer', verifyToken, master.addCustomer);
+router.get('/service-menu', verifyToken, master.getServiceMenu);
+router.post('/add-service-item', verifyToken, master.addServiceItem);
 
-// ==============================
 // SALES
-// ==============================
-router.get('/sales/list', salesController.getSalesList);
-router.post('/save-sale', trans.saveSale);
+router.get('/sales/list', verifyToken, salesController.getSalesList);
+router.post('/save-sale', verifyToken, trans.saveSale);
 
-// ==============================
 // SERVICE JOBS (MASTER & INWARD)
-// ==============================
-router.get('/cust-inward-no', serviceController.getCustInwardNo);
-router.post('/save-service-job', serviceController.saveServiceJobMaster); 
-router.get('/service-jobs', serviceController.getServiceJobs);          
-router.get('/service/list', serviceController.getServiceJobs);          
+router.get('/cust-inward-no', verifyToken, serviceController.getCustInwardNo);
+router.post('/save-service-job', verifyToken, serviceController.saveServiceJobMaster); 
+router.get('/service-jobs', verifyToken, serviceController.getServiceJobs);          
+router.get('/service/list', verifyToken, serviceController.getServiceJobs);          
 
-// ==============================
 // CUSTOMER OUTWARD (CLOSE JOB)
-// ==============================
-router.get('/pending-jobcards', serviceController.getPendingJobCards);
-router.post('/save-cust-outward', serviceController.saveCustomerOutward);
+router.get('/pending-jobcards', verifyToken, serviceController.getPendingJobCards);
+router.post('/save-cust-outward', verifyToken, serviceController.saveCustomerOutward);
 
-// ==============================
-// 🚨 NEW: SUPPLIER OUTWARD (SEND TO COMPANY) 🚨
-// ==============================
-// THESE 4 LINES FIX YOUR 404 ERRORS ON THE SUPPLIER PAGE!
-router.get('/outward-no', serviceController.getOutwardNo);
-router.post('/save-outward', serviceController.saveOutward);
-router.get('/supplier-outward/list', serviceController.getSupplierOutwards);
-router.get('/pending-customer-parts', serviceController.getPendingCustomerParts);
+// SUPPLIER OUTWARD (SEND TO COMPANY)
+router.get('/outward-no', verifyToken, serviceController.getOutwardNo);
+router.post('/save-outward', verifyToken, serviceController.saveOutward);
+router.get('/supplier-outward/list', verifyToken, serviceController.getSupplierOutwards);
+router.get('/pending-customer-parts', verifyToken, serviceController.getPendingCustomerParts);
 
-// ==============================
 // WARRANTY & SUPPLIER RECONCILIATION
-// ==============================
-router.get('/warranty-report', serviceController.getWarrantyReport);       
-router.get('/warranty-master', serviceController.getWarrantyMasterReport); 
+router.get('/warranty-report', verifyToken, serviceController.getWarrantyReport);       
+router.get('/warranty-master', verifyToken, serviceController.getWarrantyMasterReport); 
+router.get('/supplier-inward-no', verifyToken, serviceController.getInwardNo); 
+router.get('/pending-supplier-outwards', verifyToken, serviceController.getPendingSupplierOutwards);
+router.post('/save-supplier-inward', verifyToken, serviceController.saveSupplierInward);
 
-// Added the missing Inward No route here too just in case!
-router.get('/supplier-inward-no', serviceController.getInwardNo); 
-router.get('/pending-supplier-outwards', serviceController.getPendingSupplierOutwards);
-router.post('/save-supplier-inward', serviceController.saveSupplierInward);
-
-// ==============================
 // EXPENSES
-// ==============================
-router.post('/expenses/add', expenseController.addExpense);
-router.get('/expenses/list', expenseController.getExpenses);
+router.post('/expenses/add', verifyToken, expenseController.addExpense);
+router.get('/expenses/list', verifyToken, expenseController.getExpenses);
+
+// REPORTS
+router.get('/reports/sales-history', verifyToken, reportController.getSalesHistory);
+router.get('/reports/pending-jobs', verifyToken, reportController.getPendingJobs);
+router.get('/reports/completed-jobs', verifyToken, reportController.getCompletedJobs);
+router.get('/reports/supplier-pending', verifyToken, reportController.getPendingSupplier);
+router.get('/reports/supplier-completed', verifyToken, reportController.getCompletedSupplier);
+router.get('/reports/dashboard-stats', verifyToken, reportController.getDashboardStats);
+
+// SERVICE OUTWARD / BILLING
+router.get('/service-out-no', verifyToken, serviceController.getServiceOutNo);
+router.get('/pending-service-jobs', verifyToken, serviceController.getPendingServiceJobs);
+router.post('/save-service-bill', verifyToken, serviceController.saveServiceBill);
+
+// INQUIRIES
+router.post('/inquiries', verifyToken, inquiryController.createInquiry);
+router.get('/inquiries', verifyToken, inquiryController.getInquiries);
+router.put('/inquiries/:id/status', verifyToken, inquiryController.updateInquiryStatus);
 
 // ==============================
-// REPORTS
+// DASHBOARD SUMMARY
 // ==============================
-router.get('/reports/sales-history', reportController.getSalesHistory);
-router.get('/reports/pending-jobs', reportController.getPendingJobs);
-router.get('/reports/completed-jobs', reportController.getCompletedJobs);
-router.get('/reports/supplier-pending', reportController.getPendingSupplier);
-router.get('/reports/supplier-completed', reportController.getCompletedSupplier);
-router.get('/reports/dashboard-stats', reportController.getDashboardStats);
-// Add these with your other Service Jobs routes
-router.get('/service-out-no', serviceController.getServiceOutNo);
-router.get('/pending-service-jobs', serviceController.getPendingServiceJobs);
-router.post('/save-service-bill', serviceController.saveServiceBill);
-// ==============================
-// DASHBOARD SUMMARY (FIXED TABLE NAMES)
-// ==============================
-router.get('/dashboard-summary', async (req, res) => {
+router.get('/dashboard-summary', verifyToken, async (req, res) => {
     try {
         const db = require('../config/db');
-        const branchId = req.query.branch || 1;
+        // You can now securely pull branchId directly from the validated token!
+        const branchId = req.user.branchId || req.query.branch || 1;
 
         const [sales] = await db.execute(
             `SELECT SUM(price) as total FROM sales WHERE DATE(created_at) = CURDATE() AND branch_id = ?`,
@@ -128,26 +132,5 @@ router.get('/dashboard-summary', async (req, res) => {
         res.status(500).json({ error: 'Dashboard summary failed', message: err.message });
     }
 });
-// ==============================
-// AUTH
-// ==============================
-router.post('/login', auth.login);
-router.post('/create-staff', auth.createStaff); // 👈 ADD THIS LINE!
 
-
-router.post('/forgot-password', auth.forgotPassword);
-router.post('/reset-password', auth.resetPassword);
-
-
-// 1. Import the new controller at the top of your file
-const inquiryController = require('../controllers/inquiryController');
-
-// 2. Add this route with your other API routes
-// Note: If you have a middleware to verify the JWT token (like verifyToken), add it here!
-router.post('/inquiries', inquiryController.createInquiry);
-// Add this under your router.post('/inquiries', ...) line
-router.get('/inquiries', inquiryController.getInquiries);
-
-// Add this right under your other inquiry routes!
-router.put('/inquiries/:id/status', inquiryController.updateInquiryStatus);
 module.exports = router;
